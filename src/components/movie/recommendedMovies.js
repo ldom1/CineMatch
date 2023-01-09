@@ -7,6 +7,7 @@ import Loading from "@layouts/Loading";
 export default function RecommendedMovieCards() {
   const [data, setData] = useState(null);
   const [isLoading, setLoading] = useState(false);
+  const [userName, setUserName] = useState("");
   const { data: session } = useSession();
 
   useEffect(() => {
@@ -32,18 +33,45 @@ export default function RecommendedMovieCards() {
           err
         )
       );
+
+    const userNameRequestOptions = {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: session.user?.email,
+      }),
+    };
+
+    fetch("/api/get_username", userNameRequestOptions)
+      .then((res) => res.json())
+      .then((data) => {
+        setUserName(data.username);
+      })
+      .catch((err) =>
+        console.log("rateMovies.tsx - Error fetching username:", err)
+      );
   }, []);
 
   async function handleFitMlModelAndPredict() {
     setLoading(true);
-    var url = "http://0.0.0.0:9999/fit_and_predict";
-    var res = await fetch(url, {
+
+    const requestOptions = {
       method: "POST",
-      mode: "no-cors",
-    });
+      mode: 'no-cors',
+      body: JSON.stringify({
+        user_name: userName,
+        user_email: session.user?.email,
+      }),
+      redirect: 'follow'
+    };
+
+    fetch("http://0.0.0.0:9999/fit_and_predict", requestOptions)
+      .catch((err) =>
+        console.log("recommendedMovies.js - Error fitting model:", err)
+      );
 
     setLoading(false);
-    Router.reload()
+    Router.reload();
   }
 
   if (isLoading || !data) {
